@@ -121,10 +121,6 @@ void remote_bitbang_t::tick(
 
 }
 
-void remote_bitbang_t::reset(){
-  //trstn = 0;
-}
-
 void remote_bitbang_t::set_pins(char _tck, char _tms, char _tdi){
   tck = _tck;
   tms = _tms;
@@ -164,7 +160,8 @@ void remote_bitbang_t::execute_command()
   switch (command) {
   case 'B': /* fprintf(stderr, "*BLINK*\n"); */ break;
   case 'b': /* fprintf(stderr, "_______\n"); */ break;
-  case 'r': reset(); break; // This is wrong. 'r' has other bits that indicated TRST and SRST.
+  case 'r': case 's': trstn = 0; break; // This is not entirely true because we don't have SRST.
+  case 't': case 'u': trstn = 1; break; // This is not entirely true because we don't have SRST.
   case '0': set_pins(0, 0, 0); break;
   case '1': set_pins(0, 0, 1); break;
   case '2': set_pins(0, 1, 0); break;

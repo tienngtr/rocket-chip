@@ -49,9 +49,6 @@ public:
   // simulation to run.
   void execute_command();
 
-  // Reset. Currently does nothing.
-  void reset();
-
   void set_pins(char _tck, char _tms, char _tdi);
 
 };
