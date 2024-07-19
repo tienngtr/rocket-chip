@@ -40,7 +40,7 @@ public:
 
   static const ssize_t buf_size = 64 * 1024;
   char recv_buf[buf_size];
-  ssize_t recv_start, recv_end;
+  ssize_t recv_cursor, recv_end;
 
   // Check for a client connecting, and accept if there is one.
   void accept();

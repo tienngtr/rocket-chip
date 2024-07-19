@@ -19,7 +19,7 @@
 remote_bitbang_t::remote_bitbang_t(uint16_t port) :
   socket_fd(0),
   client_fd(0),
-  recv_start(0),
+  recv_cursor(0),
   recv_end(0),
   err(0)
 {
@@ -131,25 +131,21 @@ void remote_bitbang_t::set_default_pins() {
 
 void remote_bitbang_t::execute_command()
 {
-  char command;
-  int again = 1;
-  while (again) {
-    ssize_t num_read = read(client_fd, &command, sizeof(command));
-    if (num_read == -1) {
+  while (recv_cursor == recv_end) {
+    recv_cursor = 0;
+    recv_end = read(client_fd, recv_buf, sizeof(recv_buf));
+    if (recv_end == -1) {
       if (errno == EAGAIN) {
         // We'll try again the next call.
         //fprintf(stderr, "Received no command. Will try again on the next call\n");
+        recv_end = recv_cursor;
       } else {
         fprintf(stderr, "remote_bitbang failed to read on socket: %s (%d)\n",
                 strerror(errno), errno);
-        again = 0;
         abort();
       }
-    } else if (num_read == 0) {
+    } else if (recv_end == 0) {
       fprintf(stderr, "No Command Received.\n");
-      again = 1;
-    } else {
-      again = 0;
     }
   }
 
@@ -158,7 +154,7 @@ void remote_bitbang_t::execute_command()
   int dosend = 0;
 
   char tosend = '?';
-
+  char command = recv_buf[recv_cursor++];
   switch (command) {
   case 'B': /* fprintf(stderr, "*BLINK*\n"); */ break;
   case 'b': /* fprintf(stderr, "_______\n"); */ break;
