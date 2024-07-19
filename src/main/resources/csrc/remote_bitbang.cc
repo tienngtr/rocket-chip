@@ -64,10 +64,7 @@ remote_bitbang_t::remote_bitbang_t(uint16_t port) :
     abort();
   }
 
-  tck = 1;
-  tms = 1;
-  tdi = 1;
-  trstn = 1;
+  set_default_pins();
   quit = 0;
 
   fprintf(stderr, "This emulator compiled with JTAG Remote Bitbang client. To enable, use +jtag_rbb_enable=1.\n");
@@ -125,6 +122,11 @@ void remote_bitbang_t::set_pins(char _tck, char _tms, char _tdi){
   tck = _tck;
   tms = _tms;
   tdi = _tdi;
+}
+
+void remote_bitbang_t::set_default_pins() {
+  set_pins(0, 1, 1);
+  trstn = 1;
 }
 
 void remote_bitbang_t::execute_command()
@@ -192,6 +194,7 @@ void remote_bitbang_t::execute_command()
 
   if (quit) {
     // The remote disconnected.
+    set_default_pins();
     fprintf(stderr, "Remote end disconnected\n");
     close(client_fd);
     client_fd = 0;

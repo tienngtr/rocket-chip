@@ -50,7 +50,7 @@ public:
   void execute_command();
 
   void set_pins(char _tck, char _tms, char _tdi);
-
+  void set_default_pins();
 };
 
 #endif
