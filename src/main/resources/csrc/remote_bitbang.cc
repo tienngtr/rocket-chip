@@ -21,6 +21,7 @@ remote_bitbang_t::remote_bitbang_t(uint16_t port) :
   client_fd(0),
   recv_cursor(0),
   recv_end(0),
+  send_end(0),
   err(0)
 {
   socket_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -129,31 +130,46 @@ void remote_bitbang_t::set_default_pins() {
   trstn = 1;
 }
 
+void remote_bitbang_t::flush_send_buf() {
+  ssize_t send_cursor = 0;
+  while (send_cursor != send_end) {
+    ssize_t bytes = write(client_fd, send_buf + send_cursor, send_end - send_cursor);
+    if (bytes == -1) {
+      fprintf(stderr, "failed to write to socket: %s (%d)\n", strerror(errno), errno);
+      abort();
+    }
+    send_cursor += bytes;
+  }
+  send_end = 0;
+}
+
+void remote_bitbang_t::read_into_recv_buf() {
+  recv_cursor = 0;
+  recv_end = read(client_fd, recv_buf, sizeof(recv_buf));
+  if (recv_end == -1) {
+    if (errno == EAGAIN) {
+      // We'll try again the next call.
+      //fprintf(stderr, "Received no command. Will try again on the next call\n");
+      recv_end = recv_cursor;
+    } else {
+      fprintf(stderr, "remote_bitbang failed to read on socket: %s (%d)\n",
+              strerror(errno), errno);
+      abort();
+    }
+  } else if (recv_end == 0) {
+    fprintf(stderr, "No Command Received.\n");
+  }
+}
+
 void remote_bitbang_t::execute_command()
 {
   while (recv_cursor == recv_end) {
-    recv_cursor = 0;
-    recv_end = read(client_fd, recv_buf, sizeof(recv_buf));
-    if (recv_end == -1) {
-      if (errno == EAGAIN) {
-        // We'll try again the next call.
-        //fprintf(stderr, "Received no command. Will try again on the next call\n");
-        recv_end = recv_cursor;
-      } else {
-        fprintf(stderr, "remote_bitbang failed to read on socket: %s (%d)\n",
-                strerror(errno), errno);
-        abort();
-      }
-    } else if (recv_end == 0) {
-      fprintf(stderr, "No Command Received.\n");
-    }
+    flush_send_buf();
+    read_into_recv_buf();
   }
 
   //fprintf(stderr, "Received a command %c\n", command);
 
-  int dosend = 0;
-
-  char tosend = '?';
   char command = recv_buf[recv_cursor++];
   switch (command) {
   case 'B': /* fprintf(stderr, "*BLINK*\n"); */ break;
@@ -168,29 +184,22 @@ void remote_bitbang_t::execute_command()
   case '5': set_pins(1, 0, 1); break;
   case '6': set_pins(1, 1, 0); break;
   case '7': set_pins(1, 1, 1); break;
-  case 'R': dosend = 1; tosend = tdo ? '1' : '0'; break;
+  case 'R':
+    send_buf[send_end++] = tdo ? '1' : '0';
+    if (send_end == buf_size) {
+      flush_send_buf();
+    }
+    break;
   case 'Q': quit = 1; break;
   default:
     fprintf(stderr, "remote_bitbang got unsupported command '%c'\n",
             command);
   }
 
-  if (dosend){
-    while (1) {
-      ssize_t bytes = write(client_fd, &tosend, sizeof(tosend));
-      if (bytes == -1) {
-        fprintf(stderr, "failed to write to socket: %s (%d)\n", strerror(errno), errno);
-        abort();
-      }
-      if (bytes > 0) {
-        break;
-      }
-    }
-  }
-
   if (quit) {
     // The remote disconnected.
     set_default_pins();
+    flush_send_buf();
     fprintf(stderr, "Remote end disconnected\n");
     close(client_fd);
     client_fd = 0;

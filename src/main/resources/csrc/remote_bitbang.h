@@ -39,8 +39,11 @@ public:
   int client_fd;
 
   static const ssize_t buf_size = 64 * 1024;
-  char recv_buf[buf_size];
-  ssize_t recv_cursor, recv_end;
+  char recv_buf[buf_size], send_buf[buf_size];
+  ssize_t recv_cursor, recv_end, send_end;
+
+  void flush_send_buf();
+  void read_into_recv_buf();
 
   // Check for a client connecting, and accept if there is one.
   void accept();
