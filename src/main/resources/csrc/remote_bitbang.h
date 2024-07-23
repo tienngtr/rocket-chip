@@ -11,7 +11,10 @@ class remote_bitbang_t
 public:
   // Create a new server, listening for connections from localhost on the given
   // port.
-  remote_bitbang_t(uint16_t port);
+  explicit remote_bitbang_t(uint16_t port);
+
+  // Listen for connection on a Unix domain socket
+  explicit remote_bitbang_t(const char* path);
 
   // Do a bit of work.
   void tick(unsigned char * jtag_tck,
@@ -25,7 +28,6 @@ public:
   int exit_code() {return 0;}
   
  private:
-
   unsigned char tck;
   unsigned char tms;
   unsigned char tdi;
@@ -38,6 +40,8 @@ public:
   static const ssize_t buf_size = 64 * 1024;
   char recv_buf[buf_size], send_buf[buf_size];
   ssize_t recv_cursor, recv_end, send_end;
+
+  remote_bitbang_t();
 
   void flush_send_buf();
   void read_into_recv_buf();
