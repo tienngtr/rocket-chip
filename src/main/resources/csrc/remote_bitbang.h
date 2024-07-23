@@ -20,20 +20,17 @@ public:
             unsigned char * jtag_trstn,
             unsigned char jtag_tdo);
 
-  unsigned char done() {return quit;}
+  unsigned char done() {return 0;}
   
-  int exit_code() {return err;}
+  int exit_code() {return 0;}
   
  private:
 
-  int err;
-  
   unsigned char tck;
   unsigned char tms;
   unsigned char tdi;
   unsigned char trstn;
   unsigned char tdo;
-  unsigned char quit;
     
   int socket_fd;
   int client_fd;

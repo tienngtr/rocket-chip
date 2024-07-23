@@ -17,7 +17,6 @@
 /////////// remote_bitbang_t
 
 remote_bitbang_t::remote_bitbang_t(uint16_t port) :
-  err(0),
   socket_fd(0),
   client_fd(0),
   recv_cursor(0),
@@ -66,7 +65,6 @@ remote_bitbang_t::remote_bitbang_t(uint16_t port) :
   }
 
   set_default_pins();
-  quit = 0;
 
   fprintf(stderr, "This emulator compiled with JTAG Remote Bitbang client. To enable, use +jtag_rbb_enable=1.\n");
   fprintf(stderr, "Listening on port %d\n",
@@ -199,13 +197,9 @@ void remote_bitbang_t::execute_command()
       flush_send_buf();
     }
     break;
-  case 'Q': quit = 1; break;
+  case 'Q': disconnect(); break;
   default:
     fprintf(stderr, "remote_bitbang got unsupported command '%c'\n",
             command);
-  }
-
-  if (quit) {
-    disconnect();
   }
 }
