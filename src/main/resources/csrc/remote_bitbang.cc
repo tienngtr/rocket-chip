@@ -91,7 +91,7 @@ void remote_bitbang_t::accept()
       }
     } else {
       fcntl(client_fd, F_SETFL, O_NONBLOCK);
-      fprintf(stderr, "Accepted successfully.");
+      fprintf(stderr, "Accepted successfully.\n");
       again = 0;
     }
   }
