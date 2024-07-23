@@ -157,8 +157,17 @@ void remote_bitbang_t::read_into_recv_buf() {
       abort();
     }
   } else if (recv_end == 0) {
-    fprintf(stderr, "No Command Received.\n");
+    disconnect();
   }
+}
+
+void remote_bitbang_t::disconnect()
+{
+  set_default_pins();
+  flush_send_buf();
+  fprintf(stderr, "Remote end disconnected\n");
+  close(client_fd);
+  client_fd = 0;
 }
 
 void remote_bitbang_t::execute_command()
@@ -197,11 +206,6 @@ void remote_bitbang_t::execute_command()
   }
 
   if (quit) {
-    // The remote disconnected.
-    set_default_pins();
-    flush_send_buf();
-    fprintf(stderr, "Remote end disconnected\n");
-    close(client_fd);
-    client_fd = 0;
+    disconnect();
   }
 }

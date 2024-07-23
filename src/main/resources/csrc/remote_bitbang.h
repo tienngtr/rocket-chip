@@ -54,6 +54,7 @@ public:
 
   void set_pins(char _tck, char _tms, char _tdi);
   void set_default_pins();
+  void disconnect();
 };
 
 #endif
